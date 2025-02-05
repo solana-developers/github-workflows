@@ -26,7 +26,6 @@ jobs:
         with:
           solana_version: ${{ steps.versions.outputs.solana_version }}
           anchor_version: ${{ steps.versions.outputs.anchor_version }}
-          verify_version: ${{ env.SOLANA_VERIFY_VERSION }}
           node_version: 18
 
       - uses: Woody4618/github-actions/.github/actions/run-tests@main

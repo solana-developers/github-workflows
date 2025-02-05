@@ -57,6 +57,11 @@ on:
         type: string
         required: false
         default: ""
+      override-program-id:
+        description: "The program ID is taken from anchor.toml or PROGRAM_ADDRESS_KEYPAIR. But you can also override it here"
+        type: string
+        required: false
+        default: ""
     secrets:
       DEVNET_SOLANA_DEPLOY_URL:
       MAINNET_SOLANA_DEPLOY_URL:
@@ -226,6 +231,12 @@ jobs:
           fi
           echo "Final DEPLOYER_ADDRESS from env: $DEPLOYER_ADDRESS"
 
+      - name: Set Override Program ID
+        if: inputs.override-program-id != ''
+        run: |
+          echo "Setting program ID override to: ${{ inputs.override-program-id }}"
+          echo "PROGRAM_ID=${{ inputs.override-program-id }}" >> $GITHUB_ENV
+
       - name: Debug Initial Structure
         run: |
           echo "Current directory structure:"
@@ -253,8 +264,8 @@ jobs:
         uses: Woody4618/github-actions/.github/actions/build-anchor@main
         if: steps.check-anchor.outputs.is_anchor == 'true'
         with:
-          testing: false
           program: ${{ env.PROGRAM_NAME }}
+          features: ${{ inputs.features }}
 
       - name: Build Verified
         uses: Woody4618/github-actions/.github/actions/build-verified@main
