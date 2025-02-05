@@ -47,6 +47,16 @@ on:
         type: string
         required: false
         default: ""
+      override-solana-version:
+        description: "The version is taken from the cargo.lock but you can also override it here"
+        type: string
+        required: false
+        default: ""
+      override-anchor-version:
+        description: "The version is taken from the cargo.lock but you can also override it here"
+        type: string
+        required: false
+        default: ""
     secrets:
       DEVNET_SOLANA_DEPLOY_URL:
       MAINNET_SOLANA_DEPLOY_URL:
@@ -118,15 +128,16 @@ jobs:
             echo "MULTISIG_VAULT=${{ secrets.DEVNET_MULTISIG_VAULT }}" >> $GITHUB_ENV
           fi
 
-      - uses: Woody4618/solana-github-action-workflow/.github/actions/extract-versions@main
+      - uses: Woody4618/github-actions/.github/actions/extract-versions@main
+        if: inputs.override-solana-version == '' || inputs.override-anchor-version == ''
         id: versions
 
-      - uses: Woody4618/solana-github-action-workflow/.github/actions/setup-all@main
+      - uses: Woody4618/github-actions/.github/actions/setup-all@main
         id: setup
         with:
-          solana_version: ${{ steps.versions.outputs.solana_version }}
-          anchor_version: ${{ steps.versions.outputs.anchor_version }}
-          verify_version: ${{ env.VERIFY_VERSION }}
+          solana_version: ${{ inputs.override-solana-version != '' && inputs.override-solana-version || steps.versions.outputs.solana_version }}
+          anchor_version: ${{ inputs.override-anchor-version != '' && inputs.override-anchor-version || steps.versions.outputs.anchor_version }}
+          verify_version: ${{ env.SOLANA_VERIFY_VERSION }}
 
       - name: Set Program Variables from Anchor.toml
         if: steps.check-anchor.outputs.is_anchor == 'true'
@@ -239,14 +250,14 @@ jobs:
           fi
 
       - name: Build Anchor
-        uses: Woody4618/solana-github-action-workflow/.github/actions/build-anchor@main
+        uses: Woody4618/github-actions/.github/actions/build-anchor@main
         if: steps.check-anchor.outputs.is_anchor == 'true'
         with:
           testing: false
           program: ${{ env.PROGRAM_NAME }}
 
       - name: Build Verified
-        uses: Woody4618/solana-github-action-workflow/.github/actions/build-verified@main
+        uses: Woody4618/github-actions/.github/actions/build-verified@main
         id: build-verified
         with:
           devnet: ${{ inputs.network == 'devnet' }}
@@ -318,7 +329,7 @@ jobs:
           fi
 
       - name: Write Program Buffer
-        uses: Woody4618/solana-github-action-workflow/.github/actions/write-program-buffer@main
+        uses: Woody4618/github-actions/.github/actions/write-program-buffer@main
         id: program-buffer
         if: inputs.deploy
         with:
@@ -330,7 +341,7 @@ jobs:
           priority-fee: ${{ inputs.priority-fee }}
 
       - name: Write IDL Buffer
-        uses: Woody4618/solana-github-action-workflow/.github/actions/write-idl-buffer@main
+        uses: Woody4618/github-actions/.github/actions/write-idl-buffer@main
         id: idl-buffer
         if: inputs.upload_idl
         with:
@@ -341,7 +352,7 @@ jobs:
           idl-authority: ${{ inputs.use-squads && env.MULTISIG_VAULT || env.DEPLOYER_ADDRESS }}
 
       - name: Program Upgrade
-        uses: Woody4618/solana-github-action-workflow/.github/actions/program-upgrade@main
+        uses: Woody4618/github-actions/.github/actions/program-upgrade@main
         if: inputs.deploy && inputs.use-squads == false
         with:
           program-id: ${{ env.PROGRAM_ID }}
@@ -352,7 +363,7 @@ jobs:
           program-keypair: ${{ secrets.PROGRAM_ADDRESS_KEYPAIR }}
 
       - name: IDL Upload
-        uses: Woody4618/solana-github-action-workflow/.github/actions/idl-upload@main
+        uses: Woody4618/github-actions/.github/actions/idl-upload@main
         if: inputs.upload_idl && inputs.use-squads == false
         with:
           program-id: ${{ env.PROGRAM_ID }}
@@ -361,7 +372,7 @@ jobs:
           idl-buffer: ${{ steps.idl-buffer.outputs.buffer }}
 
       - name: Verify Build
-        uses: Woody4618/solana-github-action-workflow/.github/actions/verify-build@main
+        uses: Woody4618/github-actions/.github/actions/verify-build@main
         id: verify-build
         if: inputs.verify
         with:
