@@ -16,7 +16,7 @@ Here you can find a [detailed guide](https://github.com/solana-developers/squads
 
 ### How to use
 
-```toml
+```yaml
 name: Devnet Build and Deploy
 
 on:
@@ -47,7 +47,7 @@ jobs:
 
 Or for mainnet with verification:
 
-```toml
+```yaml
 name: Release to mainnet with IDL and verify
 
 on:
