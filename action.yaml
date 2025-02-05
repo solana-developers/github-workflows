@@ -1,0 +1,381 @@
+name: Reusable Build Solana Program
+
+on:
+  workflow_call:
+    inputs:
+      program:
+        description: "Program to build"
+        required: true
+        type: string
+      network:
+        description: "Target network for deployment (devnet/mainnet)"
+        required: false
+        default: "devnet"
+        type: string
+      deploy:
+        description: "Deploy program after build"
+        required: false
+        type: boolean
+        default: false
+      upload_idl:
+        description: "Upload IDL after build"
+        required: false
+        type: boolean
+        default: true
+      verify:
+        description: "Verify build on-chain using solana-verify"
+        required: false
+        type: boolean
+        default: true
+      use-squads:
+        description: "Use Squads multisig for deployment"
+        required: false
+        type: boolean
+        default: false
+      priority-fee:
+        description: "Priority fee in microlamports for transactions"
+        required: false
+        type: string
+        default: "100000"
+      vault-index:
+        description: "Index of the vault to use for the multisig"
+        required: false
+        type: string
+        default: "0"
+      features:
+        description: "Cargo features to enable during build"
+        type: string
+        required: false
+        default: ""
+    secrets:
+      DEVNET_SOLANA_DEPLOY_URL:
+      MAINNET_SOLANA_DEPLOY_URL:
+      DEVNET_DEPLOYER_KEYPAIR:
+      MAINNET_DEPLOYER_KEYPAIR:
+      PROGRAM_ADDRESS_KEYPAIR:
+      DEVNET_MULTISIG:
+      DEVNET_MULTISIG_VAULT:
+      MAINNET_MULTISIG:
+      MAINNET_MULTISIG_VAULT:
+    outputs:
+      buffer:
+        description: "Program buffer address"
+        value: ${{ jobs.build.outputs.buffer }}
+      idl_buffer:
+        description: "IDL buffer address"
+        value: ${{ jobs.build.outputs.idl_buffer }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SOLANA_VERIFY_VERSION: "0.4.1"
+    outputs:
+      buffer: ${{ steps.program-buffer.outputs.buffer }}
+      idl_buffer: ${{ steps.idl-buffer.outputs.buffer }}
+      is_anchor: ${{ steps.check-anchor.outputs.is_anchor }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for Anchor.toml
+        id: check-anchor
+        run: |
+          if [ -f "Anchor.toml" ]; then
+            echo "is_anchor=true" >> $GITHUB_OUTPUT
+            echo "Anchor.toml found - this is an Anchor project"
+          else
+            echo "is_anchor=false" >> $GITHUB_OUTPUT
+            echo "No Anchor.toml found - this is not an Anchor project"
+          fi
+
+      - name: Validate network
+        if: inputs.network != 'devnet' && inputs.network != 'mainnet'
+        run: |
+          echo "Error: network must be either 'devnet' or 'mainnet'"
+          exit 1
+
+      - name: Set deployment variables
+        run: |
+          # Network specific variables
+          if [ "${{ inputs.network }}" = "mainnet" ]; then
+            echo "IS_MAINNET=true" >> $GITHUB_ENV
+          else
+            echo "IS_MAINNET=false" >> $GITHUB_ENV
+          fi
+
+          # Set URLs and Keys based on network
+          if [ "${{ inputs.network }}" = "mainnet" ]; then
+            echo "DEPLOY_URL=${{ secrets.MAINNET_SOLANA_DEPLOY_URL }}" >> $GITHUB_ENV
+            echo "DEPLOYER_KEYPAIR=${{ secrets.MAINNET_DEPLOYER_KEYPAIR }}" >> $GITHUB_ENV
+            echo "MULTISIG=${{ secrets.MAINNET_MULTISIG }}" >> $GITHUB_ENV
+            echo "MULTISIG_VAULT=${{ secrets.MAINNET_MULTISIG_VAULT }}" >> $GITHUB_ENV
+          else
+            echo "DEPLOY_URL=${{ secrets.DEVNET_SOLANA_DEPLOY_URL }}" >> $GITHUB_ENV
+            echo "DEPLOYER_KEYPAIR=${{ secrets.DEVNET_DEPLOYER_KEYPAIR }}" >> $GITHUB_ENV
+            echo "MULTISIG=${{ secrets.DEVNET_MULTISIG }}" >> $GITHUB_ENV
+            echo "MULTISIG_VAULT=${{ secrets.DEVNET_MULTISIG_VAULT }}" >> $GITHUB_ENV
+          fi
+
+      - name: Extract Versions
+        uses: Woody4618/solana-github-action-workflow/.github/actions/extract-versions@main
+
+      - name: Setup Environment
+        uses: Woody4618/solana-github-action-workflow/.github/actions/setup@main
+
+      - name: Debug Environment Before Setup
+        run: |
+          echo "=== Environment Variables Before Setup ==="
+          env | grep -E "SOLANA|ANCHOR"
+          echo "==========================="
+
+      - name: Install Solana
+        uses: Woody4618/solana-github-action-workflow/.github/actions/setup-solana@main
+
+      - name: Install Anchor
+        uses: Woody4618/solana-github-action-workflow/.github/actions/setup-anchor@main
+        if: steps.check-anchor.outputs.is_anchor == 'true'
+
+      - name: Set Program Variables from Anchor.toml
+        if: steps.check-anchor.outputs.is_anchor == 'true'
+        run: |
+          PROGRAM="${{ inputs.program || 'transaction-example' }}"
+          PROGRAM_NAME=${PROGRAM//-/_}
+          echo "Looking for program ${PROGRAM_NAME} in Anchor.toml"
+          cat ./Anchor.toml
+          echo "Running toml command:"
+          ~/.cargo/bin/toml get ./Anchor.toml programs.localnet.${PROGRAM_NAME} || true
+          PROGRAM_ID=$(~/.cargo/bin/toml get ./Anchor.toml programs.localnet.${PROGRAM_NAME} | tr -d '"')
+          echo "Program: $PROGRAM_ID"
+          echo "PROGRAM_NAME=${PROGRAM_NAME}" >> $GITHUB_ENV
+          echo "PROGRAM_ID=${PROGRAM_ID}" >> $GITHUB_ENV
+
+      - name: Set Program Variables from Cargo.toml
+        if: steps.check-anchor.outputs.is_anchor == 'false'
+        run: |
+          # Use the program name directly from input
+          PROGRAM_NAME="${{ inputs.program }}"
+          echo "PROGRAM_NAME=${PROGRAM_NAME}" >> $GITHUB_ENV
+
+          # Get program ID from keypair
+          if [ ! -z "${{ secrets.PROGRAM_ADDRESS_KEYPAIR }}" ]; then
+            echo "${{ secrets.PROGRAM_ADDRESS_KEYPAIR }}" > program-keypair.json
+            PROGRAM_ID=$(solana-keygen pubkey program-keypair.json)
+            rm program-keypair.json
+            echo "Program ID from keypair: $PROGRAM_ID"
+            echo "PROGRAM_ID=${PROGRAM_ID}" >> $GITHUB_ENV
+          else
+            echo "Error: PROGRAM_ADDRESS_KEYPAIR is required for native programs"
+            exit 1
+          fi
+
+      - name: Extract Addresses from Keypairs
+        run: |
+          echo "Using network: ${{ inputs.network }}"
+
+          # Extract deployer addresses
+          if [ "${{ inputs.network }}" = "mainnet" ]; then
+            if [ -z "${{ secrets.MAINNET_DEPLOYER_KEYPAIR }}" ]; then
+              echo "Error: MAINNET_DEPLOYER_KEYPAIR is required"
+              exit 1
+            fi
+            echo "${{ secrets.MAINNET_DEPLOYER_KEYPAIR }}" > deployer-keypair.json
+            DEPLOYER_ADDRESS=$(solana-keygen pubkey deployer-keypair.json)
+            echo "Extracted mainnet deployer address: $DEPLOYER_ADDRESS"
+            echo "DEPLOYER_ADDRESS=$DEPLOYER_ADDRESS" >> $GITHUB_ENV
+            rm deployer-keypair.json
+          else
+            if [ -z "${{ secrets.DEVNET_DEPLOYER_KEYPAIR }}" ]; then
+              echo "Error: DEVNET_DEPLOYER_KEYPAIR is required"
+              exit 1
+            fi
+            echo "${{ secrets.DEVNET_DEPLOYER_KEYPAIR }}" > deployer-keypair.json
+            DEPLOYER_ADDRESS=$(solana-keygen pubkey deployer-keypair.json)
+            echo "Extracted devnet deployer address: $DEPLOYER_ADDRESS"
+            echo "DEPLOYER_ADDRESS=$DEPLOYER_ADDRESS" >> $GITHUB_ENV
+            rm deployer-keypair.json
+          fi
+
+          # Verify environment variable was set
+          if [ -z "$DEPLOYER_ADDRESS" ]; then
+            echo "Error: Failed to extract deployer address"
+            exit 1
+          fi
+          echo "Final DEPLOYER_ADDRESS from env: $DEPLOYER_ADDRESS"
+
+      - name: Debug Initial Structure
+        run: |
+          echo "Current directory structure:"
+          pwd
+          ls -la
+
+          # Check for programs directory
+          if [ -d "programs" ]; then
+            echo "Programs directory:"
+            ls -la programs/
+          else
+            echo "No programs directory found (looking for program in src/)"
+            ls -la src/ || echo "No src directory found"
+          fi
+
+          # Check for Anchor.toml
+          if [ -f "Anchor.toml" ]; then
+            echo "Anchor.toml contents:"
+            cat Anchor.toml
+          else
+            echo "No Anchor.toml found (this is expected for native programs)"
+          fi
+
+      - name: Build Anchor
+        uses: Woody4618/solana-github-action-workflow/.github/actions/build-anchor@main
+        if: steps.check-anchor.outputs.is_anchor == 'true'
+        with:
+          testing: false
+          program: ${{ env.PROGRAM_NAME }}
+
+      - name: Build Verified
+        uses: Woody4618/solana-github-action-workflow/.github/actions/build-verified@main
+        id: build-verified
+        with:
+          verify-version: ${{ env.SOLANA_VERIFY_VERSION }}
+          devnet: ${{ inputs.network == 'devnet' }}
+          program: ${{ env.PROGRAM_NAME }}
+          program-id: ${{ env.PROGRAM_ID }}
+          features: ${{ inputs.features }}
+
+      - name: Create local artifacts directory
+        run: |
+          # Create directories
+          mkdir -p build-artifacts/so
+          mkdir -p build-artifacts/idl
+
+          # Check if source files exist
+          echo "Checking source files:"
+          ls -la ./target/deploy/
+
+          # Copy SO file
+          cp -v ./target/deploy/${{ env.PROGRAM_NAME }}.so build-artifacts/so/
+
+          # Check and copy IDL if it exists
+          if [ -f "./target/idl/${{ env.PROGRAM_NAME }}.json" ]; then
+            echo "Found IDL file:"
+            ls -la ./target/idl/
+            cp -v ./target/idl/${{ env.PROGRAM_NAME }}.json build-artifacts/idl/
+            echo "IDL file copied to: ./build-artifacts/idl/${{ env.PROGRAM_NAME }}.json"
+          else
+            echo "No IDL file found (this is expected for native programs)"
+          fi
+
+          # Check copied files
+          echo "Checking copied files:"
+          ls -la build-artifacts/so/
+          if [ -f 'build-artifacts/idl/${{ env.PROGRAM_NAME }}.json' ]; then   
+              ls -la build-artifacts/idl/
+          fi
+
+          # Set permissions
+          chmod -R 777 build-artifacts/
+
+          echo "Artifacts copied to project directory at:"
+          echo "SO file: ./build-artifacts/so/${{ env.PROGRAM_NAME }}.so"
+          if [ -f "build-artifacts/idl/${{ env.PROGRAM_NAME }}.json" ]; then
+            echo "IDL file: ./build-artifacts/idl/${{ env.PROGRAM_NAME }}.json"
+          fi
+
+      - name: Store so files
+        if: ${{ !env.ACT }} # Only run on GitHub Actions, skip for local act runs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROGRAM_NAME }}-so
+          path: |
+            ./target/deploy/${{ env.PROGRAM_NAME }}.so
+
+      - name: Store idl files
+        if: ${{ !env.ACT && hashFiles(format('./target/idl/{0}.json', env.PROGRAM_NAME)) != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROGRAM_NAME }}-idl
+          path: |
+            ./target/idl/${{ env.PROGRAM_NAME }}.json
+
+      - name: Print Artifact Locations
+        run: |
+          echo "Artifacts stored locally at:"
+          echo "SO file: ./artifacts/build/${{ env.PROGRAM_NAME }}-so/target/deploy/${{ env.PROGRAM_NAME }}.so"
+          if [ -f "./target/idl/${{ env.PROGRAM_NAME }}.json" ]; then
+            echo "IDL file: ./artifacts/build/${{ env.PROGRAM_NAME }}-idl/target/idl/${{ env.PROGRAM_NAME }}.json"
+          fi
+
+      - name: Write Program Buffer
+        uses: Woody4618/solana-github-action-workflow/.github/actions/write-program-buffer@main
+        id: program-buffer
+        if: inputs.deploy
+        with:
+          program-id: ${{ env.PROGRAM_ID }}
+          program: ${{ env.PROGRAM_NAME }}
+          rpc-url: ${{ env.DEPLOY_URL }}
+          keypair: ${{ env.DEPLOYER_KEYPAIR }}
+          buffer-authority-address: ${{ inputs.use-squads == true && env.MULTISIG_VAULT || env.DEPLOYER_ADDRESS }}
+          priority-fee: ${{ inputs.priority-fee }}
+
+      - name: Write IDL Buffer
+        uses: Woody4618/solana-github-action-workflow/.github/actions/write-idl-buffer@main
+        id: idl-buffer
+        if: inputs.upload_idl
+        with:
+          program-id: ${{ env.PROGRAM_ID }}
+          program: ${{ env.PROGRAM_NAME }}
+          rpc-url: ${{ env.DEPLOY_URL }}
+          keypair: ${{ env.DEPLOYER_KEYPAIR }}
+          idl-authority: ${{ inputs.use-squads && env.MULTISIG_VAULT || env.DEPLOYER_ADDRESS }}
+
+      - name: Program Upgrade
+        uses: Woody4618/solana-github-action-workflow/.github/actions/program-upgrade@main
+        if: inputs.deploy && inputs.use-squads == false
+        with:
+          program-id: ${{ env.PROGRAM_ID }}
+          program: ${{ env.PROGRAM_NAME }}
+          buffer: ${{ steps.program-buffer.outputs.buffer }}
+          rpc-url: ${{ env.DEPLOY_URL }}
+          keypair: ${{ env.DEPLOYER_KEYPAIR }}
+          program-keypair: ${{ secrets.PROGRAM_ADDRESS_KEYPAIR }}
+
+      - name: IDL Upload
+        uses: Woody4618/solana-github-action-workflow/.github/actions/idl-upload@main
+        if: inputs.upload_idl && inputs.use-squads == false
+        with:
+          program-id: ${{ env.PROGRAM_ID }}
+          rpc-url: ${{ env.DEPLOY_URL }}
+          keypair: ${{ env.DEPLOYER_KEYPAIR }}
+          idl-buffer: ${{ steps.idl-buffer.outputs.buffer }}
+
+      - name: Verify Build
+        uses: Woody4618/solana-github-action-workflow/.github/actions/verify-build@main
+        id: verify-build
+        if: inputs.verify
+        with:
+          verify-version: ${{ env.SOLANA_VERIFY_VERSION }}
+          program-id: ${{ env.PROGRAM_ID }}
+          program: ${{ env.PROGRAM_NAME }}
+          network: ${{ inputs.network }}
+          rpc-url: ${{ env.DEPLOY_URL }}
+          keypair: ${{ env.DEPLOYER_KEYPAIR }}
+          repo-url: ${{ github.server_url }}/${{ github.repository }}
+          commit-hash: ${{ github.sha }}
+          use-squads: ${{ inputs.use-squads }}
+          vault-address: ${{ env.MULTISIG_VAULT }}
+
+      - name: Create squads program upgrade transaction (set Idl buffer, verify pda, set program buffer)
+        if: inputs.deploy && inputs.use-squads
+        uses: Woody4618/squads-program-action@main
+        with:
+          rpc: ${{ env.DEPLOY_URL }}
+          program: ${{ env.PROGRAM_ID }}
+          buffer: ${{ steps.program-buffer.outputs.buffer }}
+          idl-buffer: ${{ steps.idl-buffer.outputs.buffer }}
+          multisig: ${{ env.MULTISIG }}
+          keypair: ${{ env.DEPLOYER_KEYPAIR }}
+          priority-fee: ${{ inputs.priority-fee }}
+          vault-index: ${{ inputs.vault-index }}
+          pda-tx: ${{ steps.verify-build.outputs.pda_tx }}
