@@ -118,24 +118,15 @@ jobs:
             echo "MULTISIG_VAULT=${{ secrets.DEVNET_MULTISIG_VAULT }}" >> $GITHUB_ENV
           fi
 
-      - name: Extract Versions
-        uses: Woody4618/solana-github-action-workflow/.github/actions/extract-versions@main
+      - uses: Woody4618/solana-github-action-workflow/.github/actions/extract-versions@main
+        id: versions
 
-      - name: Setup Environment
-        uses: Woody4618/solana-github-action-workflow/.github/actions/setup@main
-
-      - name: Debug Environment Before Setup
-        run: |
-          echo "=== Environment Variables Before Setup ==="
-          env | grep -E "SOLANA|ANCHOR"
-          echo "==========================="
-
-      - name: Install Solana
-        uses: Woody4618/solana-github-action-workflow/.github/actions/setup-solana@main
-
-      - name: Install Anchor
-        uses: Woody4618/solana-github-action-workflow/.github/actions/setup-anchor@main
-        if: steps.check-anchor.outputs.is_anchor == 'true'
+      - uses: Woody4618/solana-github-action-workflow/.github/actions/setup-all@main
+        id: setup
+        with:
+          solana_version: ${{ steps.versions.outputs.solana_version }}
+          anchor_version: ${{ steps.versions.outputs.anchor_version }}
+          verify_version: ${{ env.VERIFY_VERSION }}
 
       - name: Set Program Variables from Anchor.toml
         if: steps.check-anchor.outputs.is_anchor == 'true'
@@ -154,8 +145,28 @@ jobs:
       - name: Set Program Variables from Cargo.toml
         if: steps.check-anchor.outputs.is_anchor == 'false'
         run: |
-          # Use the program name directly from input
-          PROGRAM_NAME="${{ inputs.program }}"
+          PROGRAM="${{ inputs.program || 'transaction-example' }}"
+
+          if [ -f "Cargo.toml" ]; then
+            echo "Found Cargo.toml, contents:"
+            cat Cargo.toml
+            
+            # Extract library name from [lib] section
+            LIB_NAME=$(grep -A1 '^\[lib\]' Cargo.toml | grep 'name' | sed 's/.*= *"\(.*\)".*/\1/')
+            echo "Extracted library name: ${LIB_NAME}"
+            
+            if [ -z "$LIB_NAME" ]; then
+              # Fallback to package name if no lib name found
+              LIB_NAME=$(grep -A1 '^\[package\]' Cargo.toml | grep 'name' | sed 's/.*= *"\(.*\)".*/\1/')
+              echo "No lib name found, using package name: ${LIB_NAME}"
+            fi
+          else
+            LIB_NAME="$PROGRAM"
+            echo "No Cargo.toml found, using program name: ${LIB_NAME}"
+          fi
+
+          PROGRAM_NAME="$LIB_NAME"
+          echo "Final program name: $PROGRAM_NAME"
           echo "PROGRAM_NAME=${PROGRAM_NAME}" >> $GITHUB_ENV
 
           # Get program ID from keypair
@@ -238,7 +249,6 @@ jobs:
         uses: Woody4618/solana-github-action-workflow/.github/actions/build-verified@main
         id: build-verified
         with:
-          verify-version: ${{ env.SOLANA_VERIFY_VERSION }}
           devnet: ${{ inputs.network == 'devnet' }}
           program: ${{ env.PROGRAM_NAME }}
           program-id: ${{ env.PROGRAM_ID }}
@@ -355,7 +365,6 @@ jobs:
         id: verify-build
         if: inputs.verify
         with:
-          verify-version: ${{ env.SOLANA_VERIFY_VERSION }}
           program-id: ${{ env.PROGRAM_ID }}
           program: ${{ env.PROGRAM_NAME }}
           network: ${{ inputs.network }}

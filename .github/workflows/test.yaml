@@ -1,0 +1,24 @@
+name: Test Program
+
+on:
+  workflow_call:
+    inputs:
+      program:
+        description: "Program to test"
+        required: true
+        type: string
+      branch:
+        description: "Branch to test"
+        required: false
+        type: string
+        default: "*"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Woody4618/solana-github-action-workflow/.github/actions/run-tests@main
+        with:
+          program: ${{ inputs.program }}
