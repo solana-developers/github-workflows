@@ -271,9 +271,7 @@ jobs:
         uses: solana-developers/github-actions/.github/actions/build-verified@v0.2.0
         id: build-verified
         with:
-          devnet: ${{ inputs.network == 'devnet' }}
           program: ${{ env.PROGRAM_NAME }}
-          program-id: ${{ env.PROGRAM_ID }}
           features: ${{ inputs.features }}
 
       - name: Create local artifacts directory
