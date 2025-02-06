@@ -212,7 +212,7 @@ Squads Verify:
 When you use squads to deploy your program after you approved the transaction to deploy your program you need to still trigger a remote job of the Ottersec api for it to actually show up in the solana explorer: 
 
 ```bash
-remote submit-job --program-id <yourProgramId>  --uploader <yourSquadVaultAddress>
+solana-verify remote submit-job --program-id <yourProgramId>  --uploader <yourSquadVaultAddress>
 ```
 
 Hopefully this step will also be automated in the future. 
