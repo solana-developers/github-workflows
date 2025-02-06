@@ -45,7 +45,7 @@ jobs:
       PROGRAM_ADDRESS_KEYPAIR: ${{ secrets.PROGRAM_ADDRESS_KEYPAIR }}
 ```
 
-Or for mainnet with verification:
+Or for mainnet with source code verification and squads integration:
 
 ```yaml
 name: Release to mainnet with IDL and verify
