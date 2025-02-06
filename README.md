@@ -160,7 +160,60 @@ Or run a new release to mainnet on every tag push for example.
 Or you can setup a matrix build for multiple programs and networks.
 Customize the workflow to your needs!
 
-### Running the actions locally
+## How to setup Squads integration:
+
+In general its recommended to use the [Squads Multisig](https://docs.squads.so/squads-cli/overview) to manage your programs.
+It makes your program deployments more secure and is considered good practice.
+
+1. Setup a new squad in [Squads](https://v4.squads.so/squads/) then transfer your program authority to the squad.
+
+<img width="1345" alt="image" src="https://github.com/user-attachments/assets/c1b9d003-806f-4389-bf4c-3275f180f479" />
+
+
+2. Add your local keypair to the squad as a member (At least needs to have voter permissions) so that you can propose transactions. And also add that keypair as a github secret.
+   To run it locally add the following to your .secrets file:
+
+```bash
+DEVNET_DEPLOYER_KEYPAIR=
+MAINNET_DEPLOYER_KEYPAIR=
+```
+
+<img width="832" alt="image" src="https://github.com/user-attachments/assets/492eee0c-48d0-4748-838e-849d7b91f773" />
+
+
+2. Add the following to your .secrets file if you want to run it locally or add them to your github secrets if you want to run it in github actions:
+
+```bash
+DEVNET_MULTISIG=        # Sadly at the time of writing squads V4 does not support devnet
+DEVNET_MULTISIG_VAULT=  # Sadly at the time of writing squads V4 does not support devnet
+MAINNET_MULTISIG=
+MAINNET_MULTISIG_VAULT=
+```
+
+Where Multisig vault is the address you can find on the top left corner in the [Squads Dachboard](https://v4.squads.so/squads/)
+The MULTISIG is the address of the multisig you want to use this one you can find the the settings. Its a bit more hidden so that people dont accidentally use it as program upgrade authority.
+
+<img width="1735" alt="image" src="https://github.com/user-attachments/assets/34584a9a-62b9-42c9-a6c4-4e4bf99e6631" />
+
+What this workflow will do is write a program and an IDL buffer for your program and then propose a transaction that you can approve in the Squads UI.
+
+
+Close Buffer:
+
+You may need this in case your deploy failed and you want to close a buffer that was already transfered to your multisig.
+
+```bash
+solana program show --buffers --buffer-authority <You multisig vault address>
+
+npx ts-node scripts/squad-closebuffer.ts \
+ --rpc "https://api.mainnet-beta.solana.com" \
+ --multisig "FJviNjW3L2u2kR4TPxzUNpfe2ZjrULCRhQwWEu3LGzny" \
+ --buffer "7SGJSG8aoZj39NeAkZvbUvsPDMRcUUrhRhPzgzKv7743" \
+ --keypair ~/.config/solana/id.json \
+ --program "BhV84MZrRnEvtWLdWMRJGJr1GbusxfVMHAwc3pq92g4z"
+```
+
+### Running the actions locally (optional)
 
 If you for some reason want to run the actions locally you can do so with the following commands using the act command.
 
@@ -186,7 +239,7 @@ act -W .github/workflows/reusable-build.yaml \
 
 2. Run anchor tests
 
-Note: The anchor tests use solana-test-validator which does not work in act docker container on mac because of AVX dependency. Wither run them in github, locally without docker or open PR to fix it. I couldnt find a nice way to fix it.
+Note: The anchor tests use solana-test-validator which does not work in act docker container on mac because of AVX dependency. Either run them in github, locally without docker or open PR to fix it. I couldnt find a nice way to make local-test-validator run in act.
 You can adjust the workflow to run your specific tests as well.
 
 ```bash
@@ -197,49 +250,6 @@ act -W .github/workflows/test.yaml \
  --input program=transaction-example
 ```
 
-## How to setup Squads integration:
-
-In general its recommended to use the [Squads Multisig](https://docs.squads.so/squads-cli/overview) to manage your programs.
-It makes your program deployments more secure and is considered good practice.
-
-1. Setup a new squad in [Squads](https://v4.squads.so/squads/) then transfer your program authority to the squad.
-
-2. Add your local keypair to the squad as a member (At least needs to be a voter) so that you can propose transactions. And also add that keypair as a github secret.
-   To run it locally add the following to your .secrets file:
-
-![alt text](image.png)
-
-```bash
-DEVNET_DEPLOYER_KEYPAIR=
-MAINNET_DEPLOYER_KEYPAIR=
-```
-
-2. Add the following to your .secrets file if you want to run it locally or add them to your github secrets if you want to run it in github actions:
-
-```bash
-DEVNET_MULTISIG=
-DEVNET_MULTISIG_VAULT=
-MAINNET_MULTISIG=
-MAINNET_MULTISIG_VAULT=
-```
-
-Where Multisig vault is the address you can find on the top left corner in the [Squads Dachboard](https://v4.squads.so/squads/)
-The MULTISIG is the address of the multisig you want to use this one you can find the the settings. Its a bit more hidden so that people dont accidentally use it as program upgrade authority.
-
-What this will do is write a program and an IDL buffer for your program and then propose a transaction that you can approve in the Squads UI.
-
-4. Now you can run the workflow with the following command:
-
-```bash
-act -W .github/workflows/build.yaml \
- --container-architecture linux/amd64 \
- --secret-file .secrets \
- workflow_dispatch \
- --input program=transaction-example \
- --input network=devnet \
- --input deploy=true \
- --input upload_idl=true --input use-squads=true --input verify=true
-```
 
 ## 📝 Todo List
 
@@ -273,17 +283,3 @@ act -W .github/workflows/build.yaml \
 - [ ] Add Codama support
 - [ ] Add to solana helpers or mucho -> release
 
-Close Buffer:
-
-You may need this in case your deploy failed and you want to close a buffer that was already transfered to your multisig.
-
-```bash
-solana program show --buffers --buffer-authority <You multisig vault address>
-
-npx ts-node scripts/squad-closebuffer.ts \
- --rpc "https://api.mainnet-beta.solana.com" \
- --multisig "FJviNjW3L2u2kR4TPxzUNpfe2ZjrULCRhQwWEu3LGzny" \
- --buffer "7SGJSG8aoZj39NeAkZvbUvsPDMRcUUrhRhPzgzKv7743" \
- --keypair ~/.config/solana/id.json \
- --program "BhV84MZrRnEvtWLdWMRJGJr1GbusxfVMHAwc3pq92g4z"
-```
