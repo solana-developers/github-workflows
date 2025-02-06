@@ -18,6 +18,8 @@ For the workflow you just need to set `use-squads` to true and add the needed se
 
 ### How to use
 
+Create a Solana Program. Either a [native program](https://solana.com/de/developers/guides/getstarted/local-rust-hello-world) and an [anchor program](https://www.anchor-lang.com/docs/quickstart/local). The program with the `anchor.toml` and/or `cargo.toml` need to be in the root of your repository for these workflows to work out of the box.
+
 ```yaml
 name: Devnet Build and Deploy
 
