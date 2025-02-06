@@ -104,6 +104,34 @@ MAINNET_MULTISIG=          # Mainnet Squads multisig address
 MAINNET_MULTISIG_VAULT=    # Mainnet Squads vault address
 ```
 
+This is how you can run anchor tests everytime tests or the program changed on push: 
+
+```yaml
+name: Anchor Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "programs/**"
+      - "tests/**"
+      - "Anchor.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+  workflow_dispatch:
+    inputs:
+      program:
+        description: "Program to test"
+        required: true
+        default: "transaction_example"
+
+jobs:
+  test:
+    uses: solana-developers/github-workflows/.github/workflows/test.yaml@v0.2.0
+    with:
+      program: ${{ 'transaction_example' }}
+```
+
 ### Extend and automate
 
 You can easily extend or change your workflow. For example run the build workflow automatically on every push to a development branch.
