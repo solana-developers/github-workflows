@@ -203,18 +203,8 @@ What this workflow will do is write a program and an IDL buffer for your program
 
 Close Buffer:
 
-You may need this in case your deploy failed and you want to close a buffer that was already transfered to your multisig.
+In case your workflow fails and the buffer was already created and transfered to your squads vault you can close that buffer using this [script](https://github.com/solana-developers/github-actions?tab=readme-ov-file#close-buffer-in-case-of-failure). 
 
-```bash
-solana program show --buffers --buffer-authority <You multisig vault address>
-
-npx ts-node scripts/squad-closebuffer.ts \
- --rpc "https://api.mainnet-beta.solana.com" \
- --multisig "FJviNjW3L2u2kR4TPxzUNpfe2ZjrULCRhQwWEu3LGzny" \
- --buffer "7SGJSG8aoZj39NeAkZvbUvsPDMRcUUrhRhPzgzKv7743" \
- --keypair ~/.config/solana/id.json \
- --program "BhV84MZrRnEvtWLdWMRJGJr1GbusxfVMHAwc3pq92g4z"
-```
 
 ### Running the actions locally (optional)
 
