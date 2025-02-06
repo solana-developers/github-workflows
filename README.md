@@ -1,6 +1,7 @@
 ## Reusable Github workflow to build, deploy and verify solana programs and IDLs
 
 This repository provides GitHub workfloes that automatically build, verify, and deploy solana programs including their IDL uploads.
+These workflows use the [solana developers github actions](https://github.com/solana-developers/github-actions) and combine them into an easy to use workflow. 
 There is also squads multisig support which is highly recommended to be used.
 For the workflow you just need to set `use-squads` to true and add the needed secrets to use the [squads program action](https://github.com/solana-developers/squads-program-action) automatically.
 
