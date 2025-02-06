@@ -15,7 +15,9 @@ For the workflow you just need to set `use-squads` to true and add the needed se
 - ✅ Compute budget optimization
 - ✅ Retry mechanisms for RPC failures
 - ✅ Running anchor tests
-- ✅ Caching for faster reruns for all installs 
+- ✅ Caching for faster reruns for all installs
+- ✅ Extend program automatically
+  
 
 ### How to use
 
