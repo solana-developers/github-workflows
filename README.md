@@ -162,7 +162,7 @@ Customize the workflow to your needs!
 
 ## How to setup Squads integration:
 
-In general its recommended to use the [Squads Multisig](https://docs.squads.so/squads-cli/overview) to manage your programs.
+In general its recommended to use the [Squads Multisig](https://docs.squads.so/main/getting-started/create-a-squad) or any other multisig plattform to manage your programs.
 It makes your program deployments more secure and is considered good practice.
 
 1. Setup a new squad in [Squads](https://v4.squads.so/squads/) then transfer your program authority to the squad.
@@ -170,7 +170,7 @@ It makes your program deployments more secure and is considered good practice.
 <img width="1345" alt="image" src="https://github.com/user-attachments/assets/c1b9d003-806f-4389-bf4c-3275f180f479" />
 
 
-2. Add your local keypair to the squad as a member (At least needs to have voter permissions) so that you can propose transactions. And also add that keypair as a github secret.
+2. Add your local keypair to the squad as a member (At least needs to have voter permissions) so that it can propose transactions. And also add that keypair as a github secret.
    To run it locally add the following to your .secrets file:
 
 ```bash
@@ -181,7 +181,10 @@ MAINNET_DEPLOYER_KEYPAIR=
 <img width="832" alt="image" src="https://github.com/user-attachments/assets/492eee0c-48d0-4748-838e-849d7b91f773" />
 
 
-2. Add the following to your .secrets file if you want to run it locally or add them to your github secrets if you want to run it in github actions:
+2. Add the multisig information to your `.secrets` file if you want to run it locally or add them to your github action secrets (Not workflow secrets) if you want to run it in github actions:
+
+<img width="1384" alt="image" src="https://github.com/user-attachments/assets/8bb62dab-d17b-4163-be0f-52ce51affc32" />
+
 
 ```bash
 DEVNET_MULTISIG=        # Sadly at the time of writing squads V4 does not support devnet
