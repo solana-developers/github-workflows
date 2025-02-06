@@ -207,7 +207,12 @@ The MULTISIG is the address of the multisig you want to use this one you can fin
 
 What this workflow will do is write a program and an IDL buffer for your program and then propose a transaction that you can approve in the Squads UI.
 
-Squads Verify: 
+Once the build was successful you can see the program upgrade transaction in your squads ui: 
+
+<img width="1836" alt="image" src="https://github.com/user-attachments/assets/fde50e11-00b8-4c3b-923f-f18029edacdf" />
+
+
+### Additional step for verification when using squads
 
 When you use squads to deploy your program after you approved the transaction to deploy your program you need to still trigger a remote job of the Ottersec api for it to actually show up in the solana explorer: 
 
