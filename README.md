@@ -15,8 +15,13 @@ For the workflow you just need to set `use-squads` to true and add the needed se
 - ✅ Compute budget optimization
 - ✅ Retry mechanisms for RPC failures
 - ✅ Running anchor tests
+- ✅ Caching for faster reruns for all installs
+- ✅ Extend program automatically
+  
 
 ### How to use
+
+Create a Solana Program. Either a [native program](https://solana.com/de/developers/guides/getstarted/local-rust-hello-world) and an [anchor program](https://www.anchor-lang.com/docs/quickstart/local). The program with the `anchor.toml` and/or `cargo.toml` need to be in the root of your repository for these workflows to work out of the box.
 
 ```yaml
 name: Devnet Build and Deploy
@@ -202,6 +207,20 @@ The MULTISIG is the address of the multisig you want to use this one you can fin
 
 What this workflow will do is write a program and an IDL buffer for your program and then propose a transaction that you can approve in the Squads UI.
 
+Once the build was successful you can see the program upgrade transaction in your squads ui: 
+
+<img width="1836" alt="image" src="https://github.com/user-attachments/assets/fde50e11-00b8-4c3b-923f-f18029edacdf" />
+
+
+### Additional step for verification when using squads
+
+When you use squads to deploy your program after you approved the transaction to deploy your program you need to still trigger a remote job of the Ottersec api for it to actually show up in the solana explorer: 
+
+```bash
+solana-verify remote submit-job --program-id <yourProgramId>  --uploader <yourSquadVaultAddress>
+```
+
+Hopefully this step will also be automated in the future. 
 
 Close Buffer:
 
