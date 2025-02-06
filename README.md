@@ -35,7 +35,7 @@ jobs:
       program: "hello_world"
       network: "devnet"
       deploy: true
-      upload_idl: false
+      upload_idl: true
       verify: false
       use-squads: false
       priority-fee: ${{ github.event.inputs.priority_fee }}
@@ -68,7 +68,7 @@ jobs:
       deploy: true
       upload_idl: true
       verify: true
-      use-squads: false
+      use-squads: true
       priority-fee: ${{ github.event.inputs.priority_fee }}
 
     secrets:
