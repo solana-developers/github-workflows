@@ -94,8 +94,8 @@ DEVNET_SOLANA_DEPLOY_URL=   # Your devnet RPC URL - Recommended to use a payed R
 MAINNET_SOLANA_DEPLOY_URL=  # Your mainnet RPC URL - Recommended to use a payed RPC url
 
 # Deployment Keys
-DEVNET_DEPLOYER_KEYPAIR=    # Base58 encoded keypair for devnet
-MAINNET_DEPLOYER_KEYPAIR=   # Base58 encoded keypair for mainnet
+DEVNET_DEPLOYER_KEYPAIR=    # Keypaig in the format of byte array [3, 45, 23, ...]
+MAINNET_DEPLOYER_KEYPAIR=   # Keypaig in the format of byte array [3, 45, 23, ...]
 
 PROGRAM_ADDRESS_KEYPAIR=    # Keypair of the program address - Needed for initial deploy and for native programs to find the program address. Can also be overwritten in the workflow if you dont have the keypair.
 
