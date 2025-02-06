@@ -13,6 +13,7 @@ For the workflow you just need to set `use-squads` to true and add the needed se
 - ✅ Program deploys for both devnet and mainnet
 - ✅ Compute budget optimization
 - ✅ Retry mechanisms for RPC failures
+- ✅ Running anchor tests
 
 ### How to use
 
