@@ -214,7 +214,9 @@ Once the build was successful you can see the program upgrade transaction in you
 
 ### Additional step for verification when using squads
 
-When you use squads to deploy your program after you approved the transaction to deploy your program you need to still trigger a remote job of the Ottersec api for it to actually show up in the solana explorer: 
+The verification process with Osec API will start automatically as soon as you submitted the transaction in squads that wrote the Verify PDA. 
+
+If it does not show as verified in the explorer after a while you can use this command to see the proggress of the verification or trigger a new run if it did not trigger automatcally: 
 
 ```bash
 solana-verify remote submit-job --program-id <yourProgramId>  --uploader <yourSquadVaultAddress>
