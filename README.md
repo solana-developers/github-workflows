@@ -222,7 +222,6 @@ If it does not show as verified in the explorer after a while you can use this c
 solana-verify remote submit-job --program-id <yourProgramId>  --uploader <yourSquadVaultAddress>
 ```
 
-Hopefully this step will also be automated in the future. 
 
 Close Buffer:
 
