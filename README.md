@@ -91,6 +91,7 @@ There are two examples:
 
 - [Anchor Program](https://github.com/Woody4618/anchor-github-action-example)
 - [Native Program](https://github.com/Woody4618/native-solana-github-action-example)
+- [Anchor Program using Squads](https://github.com/Woody4618/workflow-tutorial) 
 
 ### Required Secrets for specific actions
 
