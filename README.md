@@ -18,7 +18,6 @@ For the workflow you just need to set `use-squads` to true and add the needed se
 - ✅ Caching for faster reruns for all installs
 - ✅ Extend program automatically
   
-
 ### How to use
 
 Easiest is to follow this [Video Guide](https://youtu.be/h-ngRgWW_IM). 
