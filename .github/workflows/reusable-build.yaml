@@ -133,11 +133,11 @@ jobs:
             echo "MULTISIG_VAULT=${{ secrets.DEVNET_MULTISIG_VAULT }}" >> $GITHUB_ENV
           fi
 
-      - uses: solana-developers/github-actions/.github/actions/extract-versions@v0.2.1
+      - uses: solana-developers/github-actions/.github/actions/extract-versions@v0.2.2
         if: inputs.override-solana-version == '' || inputs.override-anchor-version == ''
         id: versions
 
-      - uses: solana-developers/github-actions/.github/actions/setup-all@v0.2.1
+      - uses: solana-developers/github-actions/.github/actions/setup-all@v0.2.2
         id: setup
         with:
           solana_version: ${{ inputs.override-solana-version != '' && inputs.override-solana-version || steps.versions.outputs.solana_version }}
@@ -261,14 +261,14 @@ jobs:
           fi
 
       - name: Build Anchor
-        uses: solana-developers/github-actions/.github/actions/build-anchor@v0.2.1
+        uses: solana-developers/github-actions/.github/actions/build-anchor@v0.2.2
         if: steps.check-anchor.outputs.is_anchor == 'true'
         with:
           program: ${{ env.PROGRAM_NAME }}
           features: ${{ inputs.features }}
 
       - name: Build Verified
-        uses: solana-developers/github-actions/.github/actions/build-verified@v0.2.1
+        uses: solana-developers/github-actions/.github/actions/build-verified@v0.2.2
         id: build-verified
         with:
           program: ${{ env.PROGRAM_NAME }}
@@ -338,7 +338,7 @@ jobs:
           fi
 
       - name: Write Program Buffer
-        uses: solana-developers/github-actions/.github/actions/write-program-buffer@v0.2.1
+        uses: solana-developers/github-actions/.github/actions/write-program-buffer@v0.2.2
         id: program-buffer
         if: inputs.deploy
         with:
@@ -350,7 +350,7 @@ jobs:
           priority-fee: ${{ inputs.priority-fee }}
 
       - name: Write IDL Buffer
-        uses: solana-developers/github-actions/.github/actions/write-idl-buffer@v0.2.1
+        uses: solana-developers/github-actions/.github/actions/write-idl-buffer@v0.2.2
         id: idl-buffer
         if: inputs.upload_idl
         with:
@@ -361,7 +361,7 @@ jobs:
           idl-authority: ${{ inputs.use-squads && env.MULTISIG_VAULT || env.DEPLOYER_ADDRESS }}
 
       - name: Program Upgrade
-        uses: solana-developers/github-actions/.github/actions/program-upgrade@v0.2.1
+        uses: solana-developers/github-actions/.github/actions/program-upgrade@v0.2.2
         if: inputs.deploy && inputs.use-squads == false
         with:
           program-id: ${{ env.PROGRAM_ID }}
@@ -372,7 +372,7 @@ jobs:
           program-keypair: ${{ secrets.PROGRAM_ADDRESS_KEYPAIR }}
 
       - name: IDL Upload
-        uses: solana-developers/github-actions/.github/actions/idl-upload@v0.2.1
+        uses: solana-developers/github-actions/.github/actions/idl-upload@v0.2.2
         if: inputs.upload_idl && inputs.use-squads == false
         with:
           program-id: ${{ env.PROGRAM_ID }}
@@ -381,7 +381,7 @@ jobs:
           idl-buffer: ${{ steps.idl-buffer.outputs.buffer }}
 
       - name: Verify Build
-        uses: solana-developers/github-actions/.github/actions/verify-build@v0.2.1
+        uses: solana-developers/github-actions/.github/actions/verify-build@v0.2.2
         id: verify-build
         if: inputs.verify
         with:
