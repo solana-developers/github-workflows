@@ -87,7 +87,7 @@ jobs:
       MAINNET_MULTISIG_VAULT: ${{ secrets.MAINNET_MULTISIG_VAULT }}
 ```
 
-There are two examples:
+There are three examples:
 
 - [Anchor Program](https://github.com/Woody4618/anchor-github-action-example)
 - [Native Program](https://github.com/Woody4618/native-solana-github-action-example)
