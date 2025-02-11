@@ -380,6 +380,11 @@ jobs:
           keypair: ${{ env.DEPLOYER_KEYPAIR }}
           idl-buffer: ${{ steps.idl-buffer.outputs.buffer }}
 
+      # Add small delay to ensure program buffer is finalized because sometimes verify can not find the deployed slot
+      - name: Wait for program buffer to finalize
+        if: inputs.use-squads == false
+        run: sleep 14
+
       - name: Verify Build
         uses: solana-developers/github-actions/.github/actions/verify-build@v0.2.3
         id: verify-build
