@@ -37,7 +37,7 @@ on:
 
 jobs:
   build:
-    uses: solana-developers/github-workflows/.github/workflows/reusable-build.yaml@v0.2.1
+    uses: solana-developers/github-workflows/.github/workflows/reusable-build.yaml@v0.2.2
     with:
       program: "hello_world"
       network: "devnet"
@@ -68,7 +68,7 @@ on:
 
 jobs:
   build:
-    uses: solana-developers/github-workflows/.github/workflows/reusable-build.yaml@v0.2.1
+    uses: solana-developers/github-workflows/.github/workflows/reusable-build.yaml@v0.2.2
     with:
       program: "transaction_example"
       network: "mainnet"
@@ -134,7 +134,7 @@ on:
 
 jobs:
   test:
-    uses: solana-developers/github-workflows/.github/workflows/test.yaml@v0.2.1
+    uses: solana-developers/github-workflows/.github/workflows/test.yaml@v0.2.2
     with:
       program: ${{ 'transaction_example' }}
 ```
