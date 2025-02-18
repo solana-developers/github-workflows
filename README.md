@@ -18,8 +18,9 @@ For the workflow you just need to set `use-squads` to true and add the needed se
 - ✅ Caching for faster reruns for all installs
 - ✅ Extend program automatically
   
-
 ### How to use
+
+Easiest is to follow this [Video Guide](https://youtu.be/h-ngRgWW_IM). 
 
 Create a Solana Program. Either a [native program](https://solana.com/de/developers/guides/getstarted/local-rust-hello-world) and an [anchor program](https://www.anchor-lang.com/docs/quickstart/local). The program with the `anchor.toml` and/or `cargo.toml` need to be in the root of your repository for these workflows to work out of the box.
 
@@ -86,10 +87,11 @@ jobs:
       MAINNET_MULTISIG_VAULT: ${{ secrets.MAINNET_MULTISIG_VAULT }}
 ```
 
-There are two examples:
+There are three examples:
 
 - [Anchor Program](https://github.com/Woody4618/anchor-github-action-example)
 - [Native Program](https://github.com/Woody4618/native-solana-github-action-example)
+- [Anchor Program using Squads](https://github.com/Woody4618/workflow-tutorial) 
 
 ### Required Secrets for specific actions
 
