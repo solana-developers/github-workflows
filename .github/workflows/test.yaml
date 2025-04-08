@@ -19,15 +19,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: solana-developers/github-actions/extract-versions@v0.2.4
+      - uses: solana-developers/github-actions/extract-versions@v0.2.5
         id: versions
 
-      - uses: solana-developers/github-actions/setup-all@v0.2.4
+      - uses: solana-developers/github-actions/setup-all@v0.2.5
         with:
           solana_version: ${{ steps.versions.outputs.solana_version }}
           anchor_version: ${{ steps.versions.outputs.anchor_version }}
           node_version: 18
 
-      - uses: solana-developers/github-actions/run-tests@v0.2.4
+      - uses: solana-developers/github-actions/run-tests@v0.2.5
         with:
+          solana_version: ${{ steps.versions.outputs.solana_version }}
+          anchor_version: ${{ steps.versions.outputs.anchor_version }}
           program: ${{ inputs.program }}
