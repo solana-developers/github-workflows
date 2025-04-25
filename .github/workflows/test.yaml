@@ -26,7 +26,7 @@ jobs:
         with:
           solana_version: ${{ steps.versions.outputs.solana_version }}
           anchor_version: ${{ steps.versions.outputs.anchor_version }}
-          node_version: 18
+          node_version: 20
 
       - uses: solana-developers/github-actions/run-tests@v0.2.5
         with:
