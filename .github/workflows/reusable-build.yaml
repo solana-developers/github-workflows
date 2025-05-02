@@ -57,11 +57,10 @@ on:
         type: string
         required: false
         default: ""
-      override-program-id:
-        description: "The program ID is taken from anchor.toml or PROGRAM_ADDRESS_KEYPAIR. But you can also override it here"
+      program-id:
+        description: "The program ID to use for deployment and verification"
         type: string
-        required: false
-        default: ""
+        required: true
     secrets:
       DEVNET_SOLANA_DEPLOY_URL:
       MAINNET_SOLANA_DEPLOY_URL:
@@ -93,6 +92,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set Program ID from input
+        run: |
+          echo "PROGRAM_ID=${{ inputs.program-id }}" >> $GITHUB_ENV
+
+      - name: Normalize Program Name
+        run: |
+          NORMALIZED_NAME=$(echo "${{ inputs.program }}" | tr '-' '_')
+          echo "PROGRAM_NAME=$NORMALIZED_NAME" >> $GITHUB_ENV
 
       - name: Check for Anchor.toml
         id: check-anchor
@@ -144,59 +152,6 @@ jobs:
           anchor_version: ${{ inputs.override-anchor-version != '' && inputs.override-anchor-version || steps.versions.outputs.anchor_version }}
           verify_version: ${{ env.SOLANA_VERIFY_VERSION }}
 
-      - name: Set Program Variables from Anchor.toml
-        if: steps.check-anchor.outputs.is_anchor == 'true'
-        run: |
-          PROGRAM="${{ inputs.program || 'transaction-example' }}"
-          PROGRAM_NAME=${PROGRAM//-/_}
-          echo "Looking for program ${PROGRAM_NAME} in Anchor.toml"
-          cat ./Anchor.toml
-          echo "Running toml command:"
-          ~/.cargo/bin/toml get ./Anchor.toml programs.localnet.${PROGRAM_NAME} || true
-          PROGRAM_ID=$(~/.cargo/bin/toml get ./Anchor.toml programs.localnet.${PROGRAM_NAME} | tr -d '"')
-          echo "Program: $PROGRAM_ID"
-          echo "PROGRAM_NAME=${PROGRAM_NAME}" >> $GITHUB_ENV
-          echo "PROGRAM_ID=${PROGRAM_ID}" >> $GITHUB_ENV
-
-      - name: Set Program Variables from Cargo.toml
-        if: steps.check-anchor.outputs.is_anchor == 'false'
-        run: |
-          PROGRAM="${{ inputs.program || 'transaction-example' }}"
-
-          if [ -f "Cargo.toml" ]; then
-            echo "Found Cargo.toml, contents:"
-            cat Cargo.toml
-            
-            # Extract library name from [lib] section
-            LIB_NAME=$(grep -A1 '^\[lib\]' Cargo.toml | grep 'name' | sed 's/.*= *"\(.*\)".*/\1/')
-            echo "Extracted library name: ${LIB_NAME}"
-            
-            if [ -z "$LIB_NAME" ]; then
-              # Fallback to package name if no lib name found
-              LIB_NAME=$(grep -A1 '^\[package\]' Cargo.toml | grep 'name' | sed 's/.*= *"\(.*\)".*/\1/')
-              echo "No lib name found, using package name: ${LIB_NAME}"
-            fi
-          else
-            LIB_NAME="$PROGRAM"
-            echo "No Cargo.toml found, using program name: ${LIB_NAME}"
-          fi
-
-          PROGRAM_NAME="$LIB_NAME"
-          echo "Final program name: $PROGRAM_NAME"
-          echo "PROGRAM_NAME=${PROGRAM_NAME}" >> $GITHUB_ENV
-
-          # Get program ID from keypair
-          if [ ! -z "${{ secrets.PROGRAM_ADDRESS_KEYPAIR }}" ]; then
-            echo "${{ secrets.PROGRAM_ADDRESS_KEYPAIR }}" > program-keypair.json
-            PROGRAM_ID=$(solana-keygen pubkey program-keypair.json)
-            rm program-keypair.json
-            echo "Program ID from keypair: $PROGRAM_ID"
-            echo "PROGRAM_ID=${PROGRAM_ID}" >> $GITHUB_ENV
-          else
-            echo "Error: PROGRAM_ADDRESS_KEYPAIR is required for native programs"
-            exit 1
-          fi
-
       - name: Extract Addresses from Keypairs
         run: |
           echo "Using network: ${{ inputs.network }}"
@@ -231,11 +186,29 @@ jobs:
           fi
           echo "Final DEPLOYER_ADDRESS from env: $DEPLOYER_ADDRESS"
 
-      - name: Set Override Program ID
-        if: inputs.override-program-id != ''
+      - name: Check if Program ID from keypair matches inputs.program-id
         run: |
-          echo "Setting program ID override to: ${{ inputs.override-program-id }}"
-          echo "PROGRAM_ID=${{ inputs.override-program-id }}" >> $GITHUB_ENV
+          if [ -z "${{ secrets.PROGRAM_ADDRESS_KEYPAIR }}" ]; then
+              echo "🔁 PROGRAM_ADDRESS_KEYPAIR secret not set — skipping check."
+              exit 0
+          fi
+
+          echo "${{ secrets.PROGRAM_ADDRESS_KEYPAIR }}" > program-address-keypair.json
+
+          echo -n "Expected Program ID from keypair: "
+          solana-keygen pubkey program-address-keypair.json
+
+          echo "Provided program-id input: ${{ inputs.program-id }}"
+
+          if [ "$(solana-keygen pubkey program-address-keypair.json)" != "${{ inputs.program-id }}" ]; then
+              echo "❌ Program ID is not the same is the one from PROGRAM_ADDRESS_KEYPAIR secret! Either remove the secret or change the program-id input to match the keypair."
+              rm program-address-keypair.json
+              exit 1
+          fi
+
+          echo "✅ Program ID matches the provided input."
+
+          rm program-address-keypair.json
 
       - name: Debug Initial Structure
         run: |
