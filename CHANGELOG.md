@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.10] - 2024-07-26
+
+- Pass library-name to export-pda-tx
+
 ## [0.2.7] - 2025-05-02
 
 - Make program-id input mandatory and add a check that program keypair secret and program-id input match
