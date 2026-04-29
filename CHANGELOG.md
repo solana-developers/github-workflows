@@ -5,10 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2026-04-28
+## [0.3.0] - 2026-04-29
 
-- Add program-metadata IDL upload support via `use-program-metadata-idl` input
-- Integrate `metadata-upload` and `write-metadata-buffer` actions from `pmp-upload` branch
+- Update all github-actions to v0.2.9
+- Update squads-program-action to v0.4.0
+- Add program-metadata IDL upload support via `use-program-metadata-idl` input (default: true)
+- Integrate `metadata-upload` and `write-metadata-buffer` actions
 - Support both direct metadata upload and Squads multisig buffer workflow
 - Expose `metadata_buffer` output from reusable workflow
 
