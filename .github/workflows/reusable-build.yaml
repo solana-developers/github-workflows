@@ -42,6 +42,11 @@ on:
         required: false
         type: string
         default: "0"
+      use-program-metadata-idl:
+        description: "Use program-metadata program for IDL upload instead of Anchor IDL commands"
+        required: false
+        type: boolean
+        default: true
       features:
         description: "Cargo features to enable during build"
         type: string
@@ -78,6 +83,9 @@ on:
       idl_buffer:
         description: "IDL buffer address"
         value: ${{ jobs.build.outputs.idl_buffer }}
+      metadata_buffer:
+        description: "Program-metadata buffer address"
+        value: ${{ jobs.build.outputs.metadata_buffer }}
 
 jobs:
   build:
@@ -88,6 +96,7 @@ jobs:
     outputs:
       buffer: ${{ steps.program-buffer.outputs.buffer }}
       idl_buffer: ${{ steps.idl-buffer.outputs.buffer }}
+      metadata_buffer: ${{ steps.metadata-buffer.outputs.buffer }}
       is_anchor: ${{ steps.check-anchor.outputs.is_anchor }}
     steps:
       - name: Checkout repository
@@ -322,16 +331,27 @@ jobs:
           buffer-authority-address: ${{ inputs.use-squads == true && env.MULTISIG_VAULT || env.DEPLOYER_ADDRESS }}
           priority-fee: ${{ inputs.priority-fee }}
 
-      - name: Write IDL Buffer
+      - name: Write IDL Buffer (Anchor)
         uses: solana-developers/github-actions/write-idl-buffer@v0.2.7
         id: idl-buffer
-        if: inputs.upload_idl
+        if: inputs.upload_idl && !inputs.use-program-metadata-idl
         with:
           program-id: ${{ env.PROGRAM_ID }}
           program: ${{ env.PROGRAM_NAME }}
           rpc-url: ${{ env.DEPLOY_URL }}
           keypair: ${{ env.DEPLOYER_KEYPAIR }}
           idl-authority: ${{ inputs.use-squads && env.MULTISIG_VAULT || env.DEPLOYER_ADDRESS }}
+
+      - name: Write Metadata Buffer (Program Metadata)
+        uses: solana-developers/github-actions/write-metadata-buffer@v0.2.8
+        id: metadata-buffer
+        if: inputs.upload_idl && inputs.use-program-metadata-idl && inputs.use-squads
+        with:
+          idl-path: ./target/idl/${{ env.PROGRAM_NAME }}.json
+          rpc-url: ${{ env.DEPLOY_URL }}
+          keypair: ${{ env.DEPLOYER_KEYPAIR }}
+          buffer-authority: ${{ env.MULTISIG_VAULT }}
+          priority-fees: ${{ inputs.priority-fee }}
 
       - name: Program Upgrade
         uses: solana-developers/github-actions/program-upgrade@v0.2.7
@@ -344,14 +364,38 @@ jobs:
           keypair: ${{ env.DEPLOYER_KEYPAIR }}
           program-keypair: ${{ secrets.PROGRAM_ADDRESS_KEYPAIR }}
 
-      - name: IDL Upload
+      - name: IDL Upload (Anchor)
         uses: solana-developers/github-actions/idl-upload@v0.2.7
-        if: inputs.upload_idl && inputs.use-squads == false
+        if: inputs.upload_idl && !inputs.use-program-metadata-idl && inputs.use-squads == false
         with:
           program-id: ${{ env.PROGRAM_ID }}
           rpc-url: ${{ env.DEPLOY_URL }}
           keypair: ${{ env.DEPLOYER_KEYPAIR }}
           idl-buffer: ${{ steps.idl-buffer.outputs.buffer }}
+
+      - name: Metadata Upload (Program Metadata - direct)
+        uses: solana-developers/github-actions/metadata-upload@v0.2.8
+        if: inputs.upload_idl && inputs.use-program-metadata-idl && inputs.use-squads == false
+        with:
+          program-id: ${{ env.PROGRAM_ID }}
+          idl-path: ./target/idl/${{ env.PROGRAM_NAME }}.json
+          seed: idl
+          rpc-url: ${{ env.DEPLOY_URL }}
+          keypair: ${{ env.DEPLOYER_KEYPAIR }}
+          priority-fees: ${{ inputs.priority-fee }}
+
+      - name: Metadata Upload (Program Metadata - Squads buffer)
+        uses: solana-developers/github-actions/metadata-upload@v0.2.8
+        if: inputs.upload_idl && inputs.use-program-metadata-idl && inputs.use-squads
+        with:
+          program-id: ${{ env.PROGRAM_ID }}
+          buffer: ${{ steps.metadata-buffer.outputs.buffer }}
+          seed: idl
+          rpc-url: ${{ env.DEPLOY_URL }}
+          keypair: ${{ env.DEPLOYER_KEYPAIR }}
+          priority-fees: ${{ inputs.priority-fee }}
+          export: ${{ env.MULTISIG_VAULT }}
+          close-buffer: "true"
 
       # Add small delay to ensure program buffer is finalized because sometimes verify can not find the deployed slot
       - name: Wait for program buffer to finalize
@@ -375,12 +419,13 @@ jobs:
 
       - name: Create squads program upgrade transaction (set Idl buffer, verify pda, set program buffer)
         if: inputs.deploy && inputs.use-squads
-        uses: solana-developers/squads-program-action@v0.3.0
+        uses: solana-developers/squads-program-action@v0.4.0
         with:
           rpc: ${{ env.DEPLOY_URL }}
           program: ${{ env.PROGRAM_ID }}
           buffer: ${{ steps.program-buffer.outputs.buffer }}
-          idl-buffer: ${{ steps.idl-buffer.outputs.buffer }}
+          idl-buffer: ${{ !inputs.use-program-metadata-idl && steps.idl-buffer.outputs.buffer || '' }}
+          metadata-buffer: ${{ inputs.use-program-metadata-idl && steps.metadata-buffer.outputs.buffer || '' }}
           multisig: ${{ env.MULTISIG }}
           keypair: ${{ env.DEPLOYER_KEYPAIR }}
           priority-fee: ${{ inputs.priority-fee }}
