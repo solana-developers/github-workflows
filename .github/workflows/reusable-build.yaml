@@ -419,7 +419,7 @@ jobs:
 
       - name: Create squads program upgrade transaction (set Idl buffer, verify pda, set program buffer)
         if: inputs.deploy && inputs.use-squads
-        uses: solana-developers/squads-program-action@v0.4.0
+        uses: solana-developers/squads-program-action@v0.4.1
         with:
           rpc: ${{ env.DEPLOY_URL }}
           program: ${{ env.PROGRAM_ID }}
