@@ -14,7 +14,7 @@ This repository moved from `solana-developers` to `solana-foundation`. Update yo
 uses: solana-developers/github-workflows/.github/workflows/reusable-build.yaml@v0.3.6
 
 # After
-uses: solana-foundation/github-workflows/.github/workflows/reusable-build.yaml@v0.4.0
+uses: solana-foundation/github-workflows/.github/workflows/reusable-build.yaml@v0.5.0
 ```
 
 If you call `solana-developers/github-actions` or `solana-developers/squads-program-action` directly in your own workflows, update those references to `solana-foundation` as well.
@@ -52,7 +52,7 @@ on:
 
 jobs:
   build:
-    uses: solana-foundation/github-workflows/.github/workflows/reusable-build.yaml@v0.4.0
+    uses: solana-foundation/github-workflows/.github/workflows/reusable-build.yaml@v0.5.0
     with:
       program: "hello_world"
       program-id: "YOUR_PROGRAM_ID"
@@ -84,7 +84,7 @@ on:
 
 jobs:
   build:
-    uses: solana-foundation/github-workflows/.github/workflows/reusable-build.yaml@v0.4.0
+    uses: solana-foundation/github-workflows/.github/workflows/reusable-build.yaml@v0.5.0
     with:
       program: "transaction_example"
       program-id: "YOUR_PROGRAM_ID"
@@ -152,7 +152,7 @@ on:
 
 jobs:
   test:
-    uses: solana-foundation/github-workflows/.github/workflows/test.yaml@v0.4.0
+    uses: solana-foundation/github-workflows/.github/workflows/test.yaml@v0.5.0
     with:
       program: ${{ 'transaction_example' }}
 ```
