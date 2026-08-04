@@ -457,7 +457,7 @@ jobs:
           program buffer)
         id: squads-transaction
         if: inputs.deploy && inputs.use-squads
-        uses: solana-foundation/squads-program-action@235a140e808863443b2ba8c87eaa1cd7cf16c2dc
+        uses: solana-foundation/squads-program-action@v0.5.0
         with:
           rpc: ${{ env.DEPLOY_URL }}
           program: ${{ env.PROGRAM_ID }}
