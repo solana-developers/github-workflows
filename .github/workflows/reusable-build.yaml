@@ -38,7 +38,7 @@ on:
           verify PDA) instead of creating the vault transaction on-chain.
           Requires use-squads. A multisig member imports the exported
           transaction into the Squads transaction builder, so the deployer
-          keypair does not need any Squads membership."
+          keypair does not need proposer permission in Squads."
         required: false
         type: boolean
         default: false
