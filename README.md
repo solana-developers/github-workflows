@@ -229,6 +229,10 @@ Once the build was successful you can see the program upgrade transaction in you
 
 <img width="1836" alt="image" src="https://github.com/user-attachments/assets/fde50e11-00b8-4c3b-923f-f18029edacdf" />
 
+### Export mode (no Squads membership for the CI keypair)
+
+Proposing the transaction from CI requires the deployer keypair to be a Squads member with proposer permission. If you cannot add a CI key to your multisig, set `squads-export: true` (together with `use-squads: true`). The workflow then exports the combined transaction (program upgrade + IDL + verify PDA) instead of creating it on-chain. A multisig member imports it once into the Squads transaction builder to create the proposal — still one transaction and one approval. The exported transaction is printed in the job summary and available as the `squads_tx` workflow output.
+
 
 ### Additional step for verification when using squads
 
