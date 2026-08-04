@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-08-04
+
+- Update all github-actions to v0.2.14 to support prefunding of PMP accounts
+- Update squads action to v0.5.1
+- Wire `program-id`, `seed`, and `prefund-account` into the `write-metadata-buffer`
+  step to pre-fund the canonical metadata PDA (avoids vault
+  `SystemProgram.transfer` in Squads proposals)
+- Add `prefund-metadata-account` workflow input (default: `true`) to toggle
+  metadata PDA pre-funding
+
 ## [0.5.0] - 2026-08-04
 
 - Add `squads-export` input: export the combined Squads transaction (program
